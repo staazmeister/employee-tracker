@@ -300,9 +300,6 @@ function updateEmployeeQuestions(rolesData, rolesNames, employeesData, employees
         }
         if (answers.update === `Employee's role`) {
             getNewRoleId(employeeId, rolesData, rolesNames)
-
-        } else {
-            init();
         }
     })
 }
@@ -314,6 +311,7 @@ function getNewRoleId(employeeId, rolesData, rolesNames) {
         name: 'role',
         message: `What is the employee's new role?`,
         choices: rolesNames,
+        pageSize: 12
     }]).then(answers => {
         let roleId;
         for (let i = 0; i < rolesData.length; i++) {
