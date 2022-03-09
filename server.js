@@ -23,12 +23,12 @@ function init() {
         type: 'list',
         name: 'init',
         message: 'What would you like to do?',
-        choices: ['View All Departments', 'View All Roles', 'View All Employees', 'Update Employee', 'Add Department', 'Add Role', 'Add Employee', 'Delete Department', 'Delete Role', 'Delete Employee', 'Exit Employee Tracker'],
+        choices: ['View All Departments', 'View All Roles', 'View All Employees', 'Update Employee', 'Add Department', 'Add Role', 'Add Employee', 'Exit Employee Tracker'],
     }]).then((answers) => {
         switch (answers.init) {
             case 'Exit Employee Tracker':
                 connection.end();
-                console.log('Goodbye');
+                console.log('Goodbye!');
                 break;
             case 'Update Employee':
                 updateEmployee();
@@ -51,20 +51,13 @@ function init() {
             case 'View All Roles':
                 viewRoles();
                 break;
-            case 'Delete Employee':
-                deleteEmployee();
-                break;
-            case 'Delete Department':
-                deleteDepartment();
-                break;
-            case 'Delete Role':
-                deleteRole();
-                break;
         }
     })
 }
-//VIEW FUNCTION//
-// View all departments
+
+//VIEW FUNCTIONS//
+
+// View all Departments
 function viewDepartments() {
     connection.query(`SELECT id AS 'ID', name AS 'Departments' FROM departments`, (err, res) => {
         if (err) throw err;
@@ -73,7 +66,7 @@ function viewDepartments() {
         init();
     });
 }
-// View Roles
+// View all Roles
 function viewRoles() {
     connection.query(`SELECT r.id AS 'ID', r.title AS 'Role', d.name AS 'Department', r.salary AS 'Salary'
                       FROM roles r
@@ -105,16 +98,16 @@ function viewEmployees() {
     });
 
 }
+
 //ADD FUNCTIONS//
-// Add departments
+
+// Add New Department
 function addDepartment() {
     inquirer.prompt([{
-            type: 'input',
-            name: 'name',
-            message: 'What is the name of the new department?',
-        }
-
-    ]).then((answers) => {
+        type: 'input',
+        name: 'name',
+        message: 'What is the name of the new department?',
+    }]).then((answers) => {
         insertDepartment(answers.name);
     });
 }
@@ -127,8 +120,7 @@ function insertDepartment(newDepot) {
     });
 }
 
-// Add Roles
-// title, salary, department
+// Add New Role
 function addRole() {
     const array = [];
     getDepartmentsAsync()
@@ -176,7 +168,7 @@ function insertRole(title, salary, department_id) {
     });
 
 }
-//Add employee
+//Add New Employee
 function addEmployee() {
     const rolesData = [];
     const rolesNames = [];
@@ -255,17 +247,98 @@ function insertEmployee(firstName, lastName, roleId, managerId) {
     });
 }
 
+// Update Employee's Role
+function updateEmployee() {
+    const rolesData = [];
+    const rolesNames = [];
+
+    const employeesData = [];
+    const employeesNames = [];
+
+    getRolesAsync()
+        .then(data => {
+            for (let i = 0; i < data.length; i++) {
+                rolesData.push(data[i]);
+                rolesNames.push(data[i].role)
+            }
+
+            getEmployeesAsync()
+                .then(data => {
+                    for (let i = 0; i < data.length; i++) {
+                        employeesData.push(data[i]);
+                        employeesNames.push(data[i].last_name)
+                    }
+                    updateEmployeeQuestions(rolesData, rolesNames, employeesData, employeesNames);
+                }).catch(err => {
+                    console.log(err);
+                })
+        }).catch(err => {
+            console.log(err);
+        });
+}
 
 
+function updateEmployeeQuestions(rolesData, rolesNames, employeesData, employeesNames) {
+    inquirer.prompt([{
+            type: 'list',
+            name: 'employee',
+            message: 'Which employee would you like to update?',
+            choices: employeesNames,
+        },
+        {
+            type: 'list',
+            name: 'update',
+            message: 'What information would you like to update?',
+            choices: [`Employee's role`, 'Cancel']
+        }
+    ]).then(answers => {
+        let employeeId;
+        for (let i = 0; i < employeesData.length; i++) {
+            if (answers.employee === employeesData[i].last_name) {
+                employeeId = employeesData[i].id;
+            }
+        }
+        if (answers.update === `Employee's role`) {
+            getNewRoleId(employeeId, rolesData, rolesNames)
+
+        } else {
+            init();
+        }
+    })
+}
 
 
+function getNewRoleId(employeeId, rolesData, rolesNames) {
+    inquirer.prompt([{
+        type: 'list',
+        name: 'role',
+        message: `What is the employee's new role?`,
+        choices: rolesNames,
+    }]).then(answers => {
+        let roleId;
+        for (let i = 0; i < rolesData.length; i++) {
+            if (answers.role === rolesData[i].role) {
+                roleId = rolesData[i].id;
+            }
+        }
+        updateEmployeeRole(employeeId, roleId)
+    })
+}
 
-
-
-
-
-
-
+function updateEmployeeRole(employeeId, roleId) {
+    connection.query(`UPDATE employees SET ? WHERE ?`, [{
+                role_id: roleId
+            },
+            {
+                id: employeeId
+            }
+        ],
+        (err, res) => {
+            if (err) throw err;
+            console.log(`Successfully changed employee's role`);
+            init();
+        })
+}
 
 
 // Async Functions
