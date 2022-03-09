@@ -13,7 +13,7 @@ VALUES(1,'Sales Leader', 75000.00, 1),
 (5,'HR Manager', 95000.00, 3),
 (6,'Secretary', 50000.00, 3);
 
-INSERT INTO employees(id,first_name, last_name, role_id, manager_id)
+INSERT INTO employees(id, first_name, last_name, role_id, manager_id)
 VALUES(1,'Mickey', 'Mouse', 1, NULL),
 (2,'Donald', 'Duck', 2, 1),
 (3,'Bruno', 'Madrigal', 2, 1),
