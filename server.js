@@ -20,7 +20,7 @@ function init() {
         type: 'list',
         name: 'init',
         message: 'What would you like to do?',
-        choices: ['View Departments', 'View Roles', 'View Employees', 'Update Employee', 'Add Department', 'Add Role', 'Add Employee', 'Delete Department', 'Delete Role', 'Delete Employee', 'Exit Employee Tracker'],
+        choices: ['View All Departments', 'View All Roles', 'View All Employees', 'Update Employee', 'Add Department', 'Add Role', 'Add Employee', 'Delete Department', 'Delete Role', 'Delete Employee', 'Exit Employee Tracker'],
     }]).then((answers) => {
         switch (answers.init) {
             case 'Exit Employee Tracker':
@@ -39,13 +39,13 @@ function init() {
             case 'Add Employee':
                 addEmployee();
                 break;
-            case 'View Departments':
+            case 'View All Departments':
                 viewDepartments();
                 break;
-            case 'View Employees':
+            case 'View All Employees':
                 viewEmployees();
                 break;
-            case 'View Roles':
+            case 'View All Roles':
                 viewRoles();
                 break;
             case 'Delete Employee':
@@ -61,9 +61,9 @@ function init() {
     })
 }
 //VIEW FUNCTION//
-// View departments
+// View all departments
 function viewDepartments() {
-    connection.query(`SELECT name AS 'Departments' FROM departments`, (err, res) => {
+    connection.query(`SELECT id AS 'ID', name AS 'Departments' FROM departments`, (err, res) => {
         if (err) throw err;
         console.log('\n\n')
         console.table(res);
@@ -72,7 +72,7 @@ function viewDepartments() {
 }
 // View Roles
 function viewRoles() {
-    connection.query(`SELECT r.title AS 'Role', d.name AS 'Department', r.salary AS 'Salary'
+    connection.query(`SELECT r.id AS 'ID', r.title AS 'Role', d.name AS 'Department', r.salary AS 'Salary'
                       FROM roles r
                       JOIN departments d
                       ON r.department_id = d.id
@@ -86,34 +86,15 @@ function viewRoles() {
 }
 // View Employees
 function viewEmployees() {
-    inquirer.prompt([{
-        name: 'sortBy',
-        type: 'list',
-        message: 'How would you like to sort your employees?',
-        choices: ['Last name', 'Manager', 'Department']
-    }]).then((answers) => {
-        switch (answers.sortBy) {
-            case 'Last name':
-                sortByLastName();
-                break;
-            case 'Manager':
-                sortByManager();
-                break;
-            case 'Department':
-                sortByDepartment();
-                break;
-        }
-    })
-}
-//SORT FUNCTION//
-function sortByLastName() {
-    connection.query(`SELECT e.last_name AS 'Last Name', e.first_name AS 'First Name', r.title AS 'Role', d.name AS 'Department'
+    connection.query(`SELECT e.id as 'ID', e.last_name AS 'Last Name', e.first_name AS 'First Name', r.title AS 'Role', d.name AS 'Department', r.salary AS 'Salary', m.last_name AS 'Manager'
                       FROM employees e
                       JOIN roles r
                       ON e.role_id = r.id
                       LEFT JOIN departments d
                       ON r.department_id = d.id
-                      ORDER BY e.last_name`, (err, res) => {
+                      LEFT JOIN employees m
+                      ON e.manager_id = m.id
+                      ORDER BY e.id`, (err, res) => {
         if (err) throw err;
         console.log('\n\n')
         console.table(res);
@@ -121,32 +102,4 @@ function sortByLastName() {
     });
 
 }
-
-function sortByManager() {
-    connection.query(`SELECT e.last_name AS 'Employee Last Name', e.first_name AS 'Employee First Name', m.last_name AS 'Manager'
-                          FROM employees e
-                          LEFT JOIN employees m
-                          ON e.manager_id = m.id
-                          ORDER BY m.last_name, e.last_name`, (err, res) => {
-        if (err) throw err;
-        console.log('\n\n')
-        console.table(res);
-        init();
-    });
-
-}
-
-function sortByDepartment() {
-    connection.query(`SELECT d.name AS 'Department', e.last_name AS 'Last Name', e.first_name AS 'First Name', r.title AS 'Role'
-                          FROM employees e
-                          JOIN roles r
-                          ON e.role_id = r.id
-                          LEFT JOIN departments d
-                          ON r.department_id = d.id
-                          ORDER BY d.name, e.last_name`, (err, res) => {
-        if (err) throw err;
-        console.log('\n\n')
-        console.table(res);
-        init();
-    });
-}
+//ADD FUNCTIONS//
