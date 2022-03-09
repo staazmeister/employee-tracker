@@ -1,6 +1,8 @@
 const inquirer = require("inquirer");
 const mysql = require("mysql");
 const cTable = require('console.table');
+const Department = require(__dirname + '/classes/Department.js');
+const Role = require(__dirname + '/classes/Role.js');
 const Employee = require(__dirname + '/classes/Employee.js');
 
 const connection = mysql.createConnection({
@@ -104,7 +106,77 @@ function viewEmployees() {
 
 }
 //ADD FUNCTIONS//
+// Add departments
+function addDepartment() {
+    inquirer.prompt([{
+            type: 'input',
+            name: 'name',
+            message: 'What is the name of the new department?',
+        }
 
+    ]).then((answers) => {
+        insertDepartment(answers.name);
+    });
+}
+
+function insertDepartment(newDepot) {
+    connection.query('INSERT INTO departments SET ?', new Department(newDepot), (err, res) => {
+        if (err) throw err;
+        console.log(`Successfully added ${newDepot} to Departments`);
+        init();
+    });
+}
+
+// Add Roles
+// title, salary, department
+function addRole() {
+    const array = [];
+    getDepartmentsAsync()
+        .then(data => {
+            for (let i = 0; i < data.length; i++) {
+                array.push(data[i])
+            }
+        })
+        .catch(err => {
+            console.log(err);
+        });
+
+    inquirer.prompt([{
+            type: 'input',
+            name: 'title',
+            message: 'What is the title of the new role?',
+        },
+        {
+            type: 'input',
+            name: 'salary',
+            message: 'What is the salary of the new role?',
+        },
+        {
+            type: 'list',
+            name: 'department',
+            message: 'In which department is the new role?',
+            choices: array
+        }
+    ]).then(answers => {
+        let departmentId;
+        for (let i = 0; i < array.length; i++) {
+            if (answers.department === array[i].name) {
+                departmentId = array[i].id;
+            }
+        }
+        insertRole(answers.title, answers.salary, departmentId);
+    })
+}
+
+function insertRole(title, salary, department_id) {
+    connection.query('INSERT INTO roles SET ?', new Role(title, salary, department_id), (err, res) => {
+        if (err) throw err;
+        console.log(`Successfully added ${title} to Roles`);
+        init();
+    });
+
+}
+//Add employee
 function addEmployee() {
     const rolesData = [];
     const rolesNames = [];
@@ -136,32 +208,11 @@ function addEmployee() {
             type: 'input',
             name: 'firstName',
             message: `What is the employee's first name?`,
-            default: () => {},
-            validate: firstName => {
-                let valid = /^[a-zA-Z0-9 ]{1,30}$/.test(firstName);
-                if (valid) {
-                    return true;
-                } else {
-                    console.log(`. Your name must be between 1 and 30 characters.`)
-                    return false;
-                }
-            }
         },
         {
             type: 'input',
             name: 'lastName',
             message: `What is the employee's last name?`,
-            default: () => {},
-            validate: lastName => {
-                let valid = /^[a-zA-Z0-9 ]{1,30}$/.test(lastName);
-                if (valid) {
-                    return true;
-                } else {
-                    console.log(`. Your name must be between 1 and 30 characters.`)
-                    return false;
-                }
-            }
-
         },
         {
             type: 'list',
@@ -204,10 +255,20 @@ function insertEmployee(firstName, lastName, roleId, managerId) {
     });
 }
 
-// ===============
-// Async Functions
-// ===============
 
+
+
+
+
+
+
+
+
+
+
+
+
+// Async Functions
 function getRolesAsync() {
     return new Promise((resolve, reject) => {
         connection.query(`SELECT id, title AS 'role' FROM roles ORDER BY role`, (err, data) => {
