@@ -1,5 +1,5 @@
-const inquirer = require("inquirer")
-const mysql = require("mysql")
+const inquirer = require("inquirer");
+const mysql = require("mysql");
 const cTable = require('console.table');
 
 const connection = mysql.createConnection({
@@ -10,82 +10,143 @@ const connection = mysql.createConnection({
     database: "employee_tracker_db"
 });
 
-connection.connect(function(err) {
-    if (err) throw err
-    console.log("Connected as Id" + connection.threadId)
-    startPrompt();
-});
+console.log('\n\nWelcome to the Employee Tracker\n\n===============================');
+connection.connect();
+init();
 
-function startPrompt() {
+function init() {
+    console.log('\n\n')
     inquirer.prompt([{
-        type: "list",
-        message: "What would you like to do?",
-        name: "choice",
-        choices: [
-            "View All Employees?",
-            "View All Employee's By Roles?",
-            "View all Employees By Deparments?",
-            "Update Employee?",
-            "Add Employee?",
-            "Add Role?",
-            "Add Department?"
-        ]
-    }]).then(function(val) {
-        switch (val.choice) {
-            case "View All Employees?":
-                viewAllEmployees();
+        type: 'list',
+        name: 'init',
+        message: 'What would you like to do?',
+        choices: ['View Departments', 'View Roles', 'View Employees', 'Update Employee', 'Add Department', 'Add Role', 'Add Employee', 'Delete Department', 'Delete Role', 'Delete Employee', 'Exit Employee Tracker'],
+    }]).then((answers) => {
+        switch (answers.init) {
+            case 'Exit Employee Tracker':
+                connection.end();
+                console.log('Goodbye');
                 break;
-
-            case "View All Employee's By Roles?":
-                viewAllRoles();
-                break;
-            case "View all Emplyees By Deparments?":
-                viewAllDepartments();
-                break;
-
-            case "Add Employee?":
-                addEmployee();
-                break;
-
-            case "Update Employee?":
+            case 'Update Employee':
                 updateEmployee();
                 break;
-
-            case "Add Role?":
-                addRole();
-                break;
-
-            case "Add Department?":
+            case 'Add Department':
                 addDepartment();
                 break;
-
+            case 'Add Role':
+                addRole();
+                break;
+            case 'Add Employee':
+                addEmployee();
+                break;
+            case 'View Departments':
+                viewDepartments();
+                break;
+            case 'View Employees':
+                viewEmployees();
+                break;
+            case 'View Roles':
+                viewRoles();
+                break;
+            case 'Delete Employee':
+                deleteEmployee();
+                break;
+            case 'Delete Department':
+                deleteDepartment();
+                break;
+            case 'Delete Role':
+                deleteRole();
+                break;
         }
     })
 }
-//VIEW FUNCTIONS//
-function viewAllEmployees() {
-    connection.query("SELECT employee.first_name, employee.last_name, role.title, role.salary, department.name, CONCAT(e.first_name, ' ' ,e.last_name) AS Manager FROM employee INNER JOIN role on role.id = employee.role_id INNER JOIN department on department.id = role.department_id left join employee e on employee.manager_id = e.id;",
-        function(err, res) {
-            if (err) throw err
-            console.table(res)
-            startPrompt()
-        })
+//VIEW FUNCTION//
+// View departments
+function viewDepartments() {
+    connection.query(`SELECT name AS 'Departments' FROM departments`, (err, res) => {
+        if (err) throw err;
+        console.log('\n\n')
+        console.table(res);
+        init();
+    });
+}
+// View Roles
+function viewRoles() {
+    connection.query(`SELECT r.title AS 'Role', d.name AS 'Department', r.salary AS 'Salary'
+                      FROM roles r
+                      JOIN departments d
+                      ON r.department_id = d.id
+                      ORDER BY r.department_id`,
+        (err, res) => {
+            if (err) throw err;
+            console.log('\n\n')
+            console.table(res);
+            init();
+        });
+}
+// View Employees
+function viewEmployees() {
+    inquirer.prompt([{
+        name: 'sortBy',
+        type: 'list',
+        message: 'How would you like to sort your employees?',
+        choices: ['Last name', 'Manager', 'Department']
+    }]).then((answers) => {
+        switch (answers.sortBy) {
+            case 'Last name':
+                sortByLastName();
+                break;
+            case 'Manager':
+                sortByManager();
+                break;
+            case 'Department':
+                sortByDepartment();
+                break;
+        }
+    })
+}
+//SORT FUNCTION//
+function sortByLastName() {
+    connection.query(`SELECT e.last_name AS 'Last Name', e.first_name AS 'First Name', r.title AS 'Role', d.name AS 'Department'
+                      FROM employees e
+                      JOIN roles r
+                      ON e.role_id = r.id
+                      LEFT JOIN departments d
+                      ON r.department_id = d.id
+                      ORDER BY e.last_name`, (err, res) => {
+        if (err) throw err;
+        console.log('\n\n')
+        console.table(res);
+        init();
+    });
+
 }
 
-function viewAllRoles() {
-    connection.query("SELECT employee.first_name, employee.last_name, role.title AS Title FROM employee JOIN role ON employee.role_id = role.id;",
-        function(err, res) {
-            if (err) throw err
-            console.table(res)
-            startPrompt()
-        })
+function sortByManager() {
+    connection.query(`SELECT e.last_name AS 'Employee Last Name', e.first_name AS 'Employee First Name', m.last_name AS 'Manager'
+                          FROM employees e
+                          LEFT JOIN employees m
+                          ON e.manager_id = m.id
+                          ORDER BY m.last_name, e.last_name`, (err, res) => {
+        if (err) throw err;
+        console.log('\n\n')
+        console.table(res);
+        init();
+    });
+
 }
 
-function viewAllDepartments() {
-    connection.query("SELECT employee.first_name, employee.last_name, department.name AS Department FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id ORDER BY employee.id;",
-        function(err, res) {
-            if (err) throw err
-            console.table(res)
-            startPrompt()
-        })
+function sortByDepartment() {
+    connection.query(`SELECT d.name AS 'Department', e.last_name AS 'Last Name', e.first_name AS 'First Name', r.title AS 'Role'
+                          FROM employees e
+                          JOIN roles r
+                          ON e.role_id = r.id
+                          LEFT JOIN departments d
+                          ON r.department_id = d.id
+                          ORDER BY d.name, e.last_name`, (err, res) => {
+        if (err) throw err;
+        console.log('\n\n')
+        console.table(res);
+        init();
+    });
 }
