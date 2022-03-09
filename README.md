@@ -76,7 +76,6 @@ Skills to be implemented on this project are:
 
 
 ## Links to Application Video Demo and GitHup Repository
-- Video demo of application: https://drive.google.com/file/d/1WJJ8T4f5h11kyYxu4RoW-6gbIZ-10Y-y/view
-- Video demo of test(s): https://drive.google.com/file/d/1hgp8TfR60zth_X7NUS03RYboTVfw60eb/view
+- Video demo of application: https://drive.google.com/file/d/1ksS_-YBxlnQKgtB7U3JEm7hrjz8DFizM/view
 
-- URL for GitHub repository: https://github.com/staazmeister/team-profile-generator.git
+- URL for GitHub repository: https://github.com/staazmeister/employee-tracker.git
